@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+input{
+    background-color: #fff;
+}
+
+@layer components{
+.myContainer{
+    @apply container mx-auto px-40 py-16;
+}
+}
