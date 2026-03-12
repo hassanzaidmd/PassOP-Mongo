@@ -1,19 +1,35 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ToastContainer, toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
-
+import { useNavigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 
+
 function Manager() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+    }
+
+  }, []);
   const ref = useRef();
   const passRef = useRef();
   const [form, setform] = useState({ site: "", username: "", password: "" })
   const [passwordArray, setpasswordArray] = useState([])
+  const token = localStorage.getItem("token")
 
   const getPassword = async () => {
-    let req = await fetch("http://localhost:4000");
+    let req = await fetch("http://localhost:4000", {
+      headers: {
+        Authorization: token
+      }
+    });
     let passwords = await req.json();
-    console.log(passwords);
     setpasswordArray(passwords);
   }
 
@@ -44,12 +60,19 @@ function Manager() {
         // UPDATE EXISTING PASSWORD
         await fetch(`http://localhost:4000/${form.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+          },
           body: JSON.stringify(form)
         });
 
         // Re-fetch all passwords from DB instead of relying on local state
-        const res = await fetch("http://localhost:4000");
+        const res = await fetch("http://localhost:4000", {
+          headers: {
+            Authorization: token
+          }
+        });
         const data = await res.json();
         setpasswordArray(data);
 
@@ -59,7 +82,10 @@ function Manager() {
         const newEntry = { ...form, id: uuidv4() };
         await fetch("http://localhost:4000", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token
+          },
           body: JSON.stringify(newEntry)
         });
         setpasswordArray(prev => [...prev, newEntry]);
@@ -81,7 +107,10 @@ function Manager() {
     setpasswordArray(passwordArray.filter(item => item.id !== e))
     await fetch(`http://localhost:4000/${e}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token
+      },
       body: JSON.stringify({ e })
     })
     console.log(passwordArray)
@@ -170,7 +199,7 @@ function Manager() {
               </tr>
             </thead>
             <tbody className='bg-green-100'>
-              {passwordArray.map((item, index) => {
+              {Array.isArray(passwordArray) && passwordArray.map((item, index) => {
                 return <tr key={index}>
                   <td className='py-2 border border-white text-center'>
                     <div className='flex items-center justify-center '>

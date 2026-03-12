@@ -12,7 +12,8 @@ export function authenticate(req,res,next){
     try{
         const decoded = jwt.verify(token,process.env.JWT_SECRET);
         
-        req.userID = decoded.userID
+        req.userId = decoded.userId;
+
         next();
     }
     catch (error){
