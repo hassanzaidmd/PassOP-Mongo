@@ -4,6 +4,7 @@ import passwordRoutes from "./routes/passwordRoutes.js";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoute.js"
 import { authenticate } from "./middleware/authMiddleware.js";
+import adminRoutes from "./routes/adminRoutes.js"
 
 const app = express();
 const port = 4000;
@@ -14,7 +15,8 @@ app.use(cors());
 await connectDB();
 
 app.use("/", passwordRoutes);
-app.use("/api/auth",authRoutes)
+app.use("/api/auth",authRoutes);
+app.use("/admin",adminRoutes);
 app.get("/middleware", authenticate, (req,res)=>{
     res.json({message:"Middleware working", userId:req.userId});
 });

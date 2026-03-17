@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Manager from './page/Manager'
-import Login from './page/login'
+import Login from './page/Login'
 import Register from './page/Register'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import './App.css'
+import AdminDashboard from './page/AdminDashboard'
+import ForgotPassword from "./page/ForgotPassword";
+import ResetPassword from "./page/ResetPassword";
 
 function App() {
 
@@ -17,6 +20,9 @@ function App() {
             <Route path='/' element={<Manager />}></Route>
             <Route path='/login' element={<Login />}></Route>
             <Route path='/register' element={<Register />}></Route>
+            <Route path='/admin' element={<AdminDashboard />}></Route>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </div>
         <Footer />
