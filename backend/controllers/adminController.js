@@ -2,7 +2,7 @@ import { getCollection } from "../config/db.js";
 import { ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 
-export async function createUser(req,res){
+export async function createUser(req, res) {
 
     const { email, password, username } = req.body;
 
@@ -11,26 +11,29 @@ export async function createUser(req,res){
     // check if user already exists
     const existingUser = await usersCollection.findOne({ email });
 
-    if(existingUser){
+    if (existingUser) {
         return res.status(400).json({
-            message:"User already exists"
+            message: "User already exists"
         });
     }
 
     // hash password
-    const hashedPassword = await bcrypt.hash(password,10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = {
         username,
         email,
         password: hashedPassword,
-        role:"user"
+        role: "user",
+        twoFactorEnabled: true,
+        twoFactorCode: null,
+        twoFactorExpire: null
     };
 
     const result = await usersCollection.insertOne(user);
 
     res.json({
-        message:"User created successfully",
+        message: "User created successfully",
         result
     });
 

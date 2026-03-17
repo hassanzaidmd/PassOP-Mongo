@@ -8,6 +8,7 @@ import './App.css'
 import AdminDashboard from './page/AdminDashboard'
 import ForgotPassword from "./page/ForgotPassword";
 import ResetPassword from "./page/ResetPassword";
+import Verify2FA from './page/Verify2FA'
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
             <Route path='/admin' element={<AdminDashboard />}></Route>
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/verify-2fa" element={<Verify2FA />} />
           </Routes>
         </div>
         <Footer />

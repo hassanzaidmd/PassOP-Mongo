@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function Login() {
 
@@ -22,34 +25,67 @@ function Login() {
     });
 
     const data = await res.json();
+    let message = data.message;
+    console.log(message)
+
+    // 🔐 2FA case
+    if (data.twoFactor) {
+      console.log("OTP:", data.otp);
+      toast("OTP sent. Please verify.");
+
+      navigate("/verify-2fa", {
+        state: {
+          userId: data.userId
+        }
+      });
+
+      return;
+    }
 
     if (data.token) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
       if (data.role === "admin") {
         navigate("/admin");
+        toast(message);
       } else {
         navigate("/");
+        toast(message);
       }
     } else {
-      alert("Invalid credentials");
+      toast(message);
     }
   }
 
   return (
     <div className=" flex pt-15 items-center justify-center ">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition="Bounce"
+      />
+      {/* Same as */}
+      <ToastContainer />
 
       <div className="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"><div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div></div>
 
       <div className="w-full max-w-md bg-white/90 backdrop-blur-lg shadow-2xl rounded-2xl p-10">
 
-      <h1 className='text-4xl text font-bold text-center'>
-        <span className='text-green-500'> &lt;</span>
+        <h1 className='text-4xl text font-bold text-center'>
+          <span className='text-green-500'> &lt;</span>
 
-        <span>Pass</span><span className='text-green-500'>OP/&gt;</span>
+          <span>Pass</span><span className='text-green-500'>OP/&gt;</span>
 
-      </h1>
-      <p className='text-green-900 text-lg text-center'>Your own Password Manager</p>
+        </h1>
+        <p className='text-green-900 text-lg text-center'>Your own Password Manager</p>
 
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Welcome Back

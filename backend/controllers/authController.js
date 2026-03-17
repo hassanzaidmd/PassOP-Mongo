@@ -1,88 +1,115 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getCollection } from "../config/db.js";
+import { ObjectId } from "mongodb";
 import crypto from "crypto";
 
 
 export async function register(req, res) {
-    try {
+  try {
 
-        const { username, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-        const users = getCollection("users");
+    const users = getCollection("users");
 
-        const existingUser = await users.findOne({ email });
+    const existingUser = await users.findOne({ email });
 
-        if (existingUser) {
-            return res.status(400).json({
-                message: "User already exists"
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const result = await users.insertOne({
-            username,
-            email,
-            password: hashedPassword,
-            role: "user"
-        });
-
-        res.json({
-            message: "User registered successfully",
-            result
-        });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists"
+      });
     }
-    catch (error) {
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
-    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await users.insertOne({
+      username,
+      email,
+      password: hashedPassword,
+      role: "user",
+      twoFactorEnabled: true,
+      twoFactorCode: null,
+      twoFactorExpire: null
+    });
+
+    res.json({
+      message: "User registered successfully",
+      result
+    });
+  }
+  catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 
-export async function login(req,res) {
-    try {
-        
-        const {email, password} = req.body;
+export async function login(req, res) {
+  try {
 
-        const users = getCollection("users");
+    const { email, password } = req.body;
 
-        const user = await users.findOne({ email });
+    const users = getCollection("users");
 
-        if (!user) {
-            return res.status(400).json({
-                message: "User Not Found"
-            });
-        }
+    const user = await users.findOne({ email });
 
-        const match = await bcrypt.compare(password,user.password)
-
-        if(!match){
-            return res.status(400).json({
-                message: "Invalid Password"
-            });
-        }
-
-        const token = jwt.sign(
-            {
-                userId: user._id,
-                role: user.role
-            },
-            process.env.JWT_SECRET,
-            {expiresIn: "1d"}
-        );
-
-        res.json({
-            message: "Login Successful",
-            token,
-            role: user.role
-        });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Server error"
-        });
+    if (!user) {
+      return res.status(400).json({
+        message: "User Not Found"
+      });
     }
+
+    const match = await bcrypt.compare(password, user.password)
+
+    if (!match) {
+      return res.status(400).json({
+        message: "Invalid Password"
+      });
+    }
+
+    // 🔐 2FA CHECK
+    if (user.twoFactorEnabled) {
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      await users.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            twoFactorCode: otp,
+            twoFactorExpire: Date.now() + 5 * 60 * 1000
+          }
+        }
+      );
+
+      return res.json({
+        message: "OTP sent",
+        twoFactor: true,
+        userId: user._id,
+        otp // ⚠️ only for testing
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login Successful",
+      token,
+      role: user.role
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
 }
 
 
@@ -143,7 +170,7 @@ export async function resetPassword(req, res) {
 
   const { password } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password,10);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   await getCollection("users").updateOne(
     { _id: user._id },
@@ -161,4 +188,61 @@ export async function resetPassword(req, res) {
   res.json({
     message: "Password reset successful"
   });
+}
+
+export async function verify2FA(req, res) {
+
+  try {
+
+    const { userId, code } = req.body;
+
+    const users = getCollection("users");
+
+    const user = await users.findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (
+      user.twoFactorCode !== code ||
+      user.twoFactorExpire < Date.now()
+    ) {
+      return res.status(400).json({
+        message: "Invalid or expired OTP"
+      });
+    }
+
+    // clear OTP
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $unset: {
+          twoFactorCode: "",
+          twoFactorExpire: ""
+        }
+      }
+    );
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+        role: user.role
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
 }
