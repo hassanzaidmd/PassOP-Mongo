@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
-import { ToastContainer, toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useSearch from '../hooks/useSearch';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import { validate } from "../../backend/utils/validator";
 
 function Manager() {
   const navigate = useNavigate();
@@ -17,6 +17,15 @@ function Manager() {
       navigate("/login");
     }
 
+  }, []);
+
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.message) {
+      toast(location.state.message);
+    }
   }, []);
 
   const ref = useRef();
@@ -76,7 +85,10 @@ function Manager() {
   }
 
   const savePassword = async () => {
-    if (form.site.length > 3 && form.username.length > 3 && form.password.length > 3) {
+
+    const isValid = validate({ site: form.site, user: form.username, password: form.password });
+    if (!isValid) return;
+
       if (form.id) {
         // UPDATE EXISTING PASSWORD
         await fetch(`http://localhost:4000/${form.id}`, {
@@ -113,9 +125,6 @@ function Manager() {
         toast('Password saved!');
       }
       setform({ site: "", username: "", password: "" });
-    } else {
-      toast('Error: Password not saved!');
-    }
   };
   const editPassword = async (e) => {
     console.log("Editing password with id ", e)
@@ -160,19 +169,7 @@ function Manager() {
   }
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        transition="Bounce"
-      />
+      <ToastContainer />
 
       <div className="myContainer pb-0">
         <h1 className='text-4xl text font-bold text-center'>

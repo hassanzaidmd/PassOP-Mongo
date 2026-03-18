@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function Verify2FA() {
 
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.message) {
+            toast(location.state.message);
+        }
+    }, []);
+
     const [code, setCode] = useState("");
     const navigate = useNavigate();
-    const location = useLocation();
 
     const userId = location.state?.userId;
 
@@ -43,12 +52,14 @@ function Verify2FA() {
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("role", data.role);
 
-                toast("Login successful");
-
                 if (data.role === "admin") {
-                    navigate("/admin");
+                    navigate("/admin", {
+                        state: { message: data.message }
+                    });
                 } else {
-                    navigate("/");
+                    navigate("/", {
+                        state: { message: data.message }
+                    });
                 }
 
             } else {
@@ -63,6 +74,7 @@ function Verify2FA() {
 
     return (
         <div className="flex justify-center items-center h-screen bg-gray-50">
+            <ToastContainer />
 
             <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
 

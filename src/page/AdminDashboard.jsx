@@ -1,14 +1,24 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { getUsers, deleteUser, promoteUser, createUser } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Trash2, ShieldPlus } from "lucide-react";
 import { ToastContainer, toast } from 'react-toastify';
 import useSearch from '../hooks/useSearch';
 import 'react-toastify/dist/ReactToastify.css';
+import { validate } from "../../backend/utils/validator";
+
 
 
 
 function AdminDashboard() {
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.message) {
+            toast(location.state.message);
+        }
+    }, []);
 
     const [users, setUsers] = useState([]);
     const [form, setForm] = useState({ username: "", email: "", password: "", role: "user" });
@@ -54,6 +64,9 @@ function AdminDashboard() {
     };
 
     const handleCreate = async () => {
+        const isValid = validate({ username: form.username, email: form.email, password: form.password });
+        if (!isValid) return;
+
         await createUser(form, token);
         setForm({ username: "", email: "", password: "", role: "user" });
         loadUsers();
@@ -68,20 +81,7 @@ function AdminDashboard() {
     }, [])
     return (
         <div className="p-10">
-            <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-                transition="Bounce"
-            />
-            {/* Same as */}
+
             <ToastContainer />
 
             <h1 className="text-3xl font-bold text-gray-800 mb-10">
@@ -150,13 +150,13 @@ function AdminDashboard() {
             </div>
 
             {/* Users Table */}
-        <input
-          type="text"
-          placeholder="🔍 Search by site or username..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-6 md:w-1/2 p-2 px-4 border border-green-400 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
+            <input
+                type="text"
+                placeholder="🔍 Search by site or username..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full mb-6 md:w-1/2 p-2 px-4 border border-green-400 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
             <div className="bg-white shadow-lg rounded-xl p-6">
 
                 <h2 className="text-xl font-semibold mb-6 text-gray-700">
@@ -222,29 +222,29 @@ function AdminDashboard() {
                     </tbody>
 
                 </table>
-                            <div className="flex items-center justify-center gap-4 mt-6">
+                <div className="flex items-center justify-center gap-4 mt-6">
 
-              <button
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ⬅ Prev
-              </button>
+                    <button
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        ⬅ Prev
+                    </button>
 
-              <span className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow">
-                {currentPage}
-              </span>
+                    <span className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow">
+                        {currentPage}
+                    </span>
 
-              <button
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next ➡
-              </button>
+                    <button
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Next ➡
+                    </button>
 
-            </div>
+                </div>
 
             </div>
 
@@ -254,7 +254,9 @@ function AdminDashboard() {
 
                 <button
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition shadow"
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/", {
+                        state: { message: "Manage your Password" }
+                    })}
                 >
                     Manage Your Passwords
                 </button>

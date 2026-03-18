@@ -1,10 +1,19 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {ToastContainer, toast } from "react-toastify";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { validate } from "../../backend/utils/validator";
 
 
 function Register() {
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.message) {
+      toast(location.state.message);
+    }
+  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,6 +22,9 @@ function Register() {
   const navigate = useNavigate();
 
   const registerUser = async () => {
+    
+    const isValid = validate({ email, username, password });
+    if (!isValid) return;
 
     const res = await fetch("http://localhost:4000/api/auth/register", {
       method: "POST",
@@ -29,27 +41,14 @@ function Register() {
     const data = await res.json();
 
     if (data.message) {
-      toast(data.message);
-      navigate("/login");
+      navigate("/login", {
+        state: { message }
+      });
     }
   }
 
   return (
     <div className=" flex pt-10 items-center justify-center ">
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        transition="Bounce"
-      />
-      {/* Same as */}
       <ToastContainer />
 
       <div className="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"><div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div></div>

@@ -1,10 +1,16 @@
 import { useState } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { validate } from "../../backend/utils/validator";
 
 function ForgotPassword() {
 
   const [email, setEmail] = useState("");
 
   const handleSubmit = async () => {
+    
+    const isValid = validate({email});
+    if (!isValid) return;
 
     const res = await fetch("http://localhost:4000/api/auth/forgot-password", {
       method: "POST",
@@ -16,7 +22,7 @@ function ForgotPassword() {
 
     const data = await res.json();
 
-    alert(data.message);
+    toast(data.message);
 
     if (data.resetURL) {
       console.log("Reset Link:", data.resetURL);
@@ -26,6 +32,7 @@ function ForgotPassword() {
 
   return (
     <div className="flex justify-center items-center py-16">
+      <ToastContainer />
 
       <div className="bg-white shadow-lg p-18 rounded-xl w-96">
         <h1 className='text-4xl text font-bold text-center'>
