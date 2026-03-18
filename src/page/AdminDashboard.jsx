@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { getUsers, deleteUser, promoteUser, createUser } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { Trash2, ShieldPlus } from "lucide-react";
 import { ToastContainer, toast } from 'react-toastify';
+import useSearch from '../hooks/useSearch';
 import 'react-toastify/dist/ReactToastify.css';
 
 
@@ -12,6 +13,21 @@ function AdminDashboard() {
     const [users, setUsers] = useState([]);
     const [form, setForm] = useState({ username: "", email: "", password: "", role: "user" });
     const navigate = useNavigate();
+    const keys = useMemo(() => ["username", "email"], []);
+    const { search, setSearch, filteredData } = useSearch(
+        users,
+        keys
+    );
+
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const indexOfLast = currentPage * itemsPerPage;
+    const indexOfFirst = indexOfLast - itemsPerPage;
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+    const currentItems = filteredData.slice(indexOfFirst, indexOfLast);
 
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
@@ -134,7 +150,13 @@ function AdminDashboard() {
             </div>
 
             {/* Users Table */}
-
+        <input
+          type="text"
+          placeholder="🔍 Search by site or username..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full mb-6 md:w-1/2 p-2 px-4 border border-green-400 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
             <div className="bg-white shadow-lg rounded-xl p-6">
 
                 <h2 className="text-xl font-semibold mb-6 text-gray-700">
@@ -153,8 +175,7 @@ function AdminDashboard() {
 
                     <tbody>
 
-                        {users.map((user) => (
-
+                        {currentItems.map((user) => (
                             <tr
                                 key={user._id}
                                 className="border-b hover:bg-gray-50 transition"
@@ -201,6 +222,29 @@ function AdminDashboard() {
                     </tbody>
 
                 </table>
+                            <div className="flex items-center justify-center gap-4 mt-6">
+
+              <button
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ⬅ Prev
+              </button>
+
+              <span className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold shadow">
+                {currentPage}
+              </span>
+
+              <button
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next ➡
+              </button>
+
+            </div>
 
             </div>
 
