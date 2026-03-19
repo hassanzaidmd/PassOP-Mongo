@@ -42,7 +42,6 @@ function Login() {
 
     // 🔐 2FA case
     if (data.twoFactor) {
-      console.log("OTP:", data.otp);
       navigate("/verify-2fa", {
         state: {
           userId: data.userId,

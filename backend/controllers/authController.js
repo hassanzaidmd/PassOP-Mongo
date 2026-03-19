@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import { getCollection } from "../config/db.js";
 import { ObjectId } from "mongodb";
 import crypto from "crypto";
+import { sendEmail } from "../utils/sendEmail.js";
 
+const otpStore = {};
 
 export async function register(req, res) {
   try {
@@ -20,22 +22,28 @@ export async function register(req, res) {
       });
     }
 
+    const otp = Math.floor(100000 + 900000 * Math.random()).toString();
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await users.insertOne({
+      otpStore[email] = {
       username,
       email,
       password: hashedPassword,
-      role: "user",
-      twoFactorEnabled: true,
-      twoFactorCode: null,
-      twoFactorExpire: null
-    });
+      otp,
+      expiry: Date.now() + 5 * 60 * 1000
+    };
+
+    await sendEmail(
+      email,
+      "Your OTP - PassOP",
+      `<h2>Your Registration Otp is ${otp}</h2>`
+    )
 
     res.json({
-      message: "User registered successfully",
-      result
+      message: "OTP sent"
     });
+
   }
   catch (error) {
     console.log(error);
@@ -81,11 +89,17 @@ export async function login(req, res) {
         }
       );
 
+      
+    await sendEmail(
+      email,
+      "Your OTP - PassOP",
+      `<h2>Your Login Otp is ${otp}</h2>`
+    )
+
       return res.json({
         message: "OTP sent",
         twoFactor: true,
-        userId: user._id,
-        otp // ⚠️ only for testing
+        userId: user._id
       });
     }
 
@@ -141,12 +155,19 @@ export async function forgotPassword(req, res) {
       }
     }
   );
+  console.log(hashedToken)
+  console.log(resetToken)
 
   const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
 
+      await sendEmail(
+      email,
+      "Your Reset Password link - PassOP",
+      `<h2>Your password reset link is ${resetURL}</h2>`
+    )
+
   res.json({
     message: "Reset link generated",
-    resetURL
   });
 }
 
@@ -159,6 +180,8 @@ export async function resetPassword(req, res) {
     .update(resetToken)
     .digest("hex");
 
+  console.log(hashedToken)
+  console.log(resetToken)
   const user = await getCollection("users").findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() }
@@ -168,6 +191,8 @@ export async function resetPassword(req, res) {
     return res.json({ message: "Token invalid or expired" });
   }
 
+  const email = user.email;
+  console.log(email)
   const { password } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -185,6 +210,13 @@ export async function resetPassword(req, res) {
     }
   );
 
+  
+    await sendEmail(
+      email,
+      "PassOp Registration Successful",
+      `<h2>Congratulation 🎇🎇 You have successfully reset your password on PassOp</h2>`
+    )
+
   res.json({
     message: "Password reset successful"
   });
@@ -199,6 +231,7 @@ export async function verify2FA(req, res) {
     const users = getCollection("users");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
+    const email = user.email;
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -233,6 +266,13 @@ export async function verify2FA(req, res) {
       { expiresIn: "1d" }
     );
 
+    
+    await sendEmail(
+      email,
+      "PassOp Registration Successful",
+      `<h2>You have logged in on PassOp at ${Date.now()}</h2>`
+    )
+
     res.json({
       message: "Login successful",
       token,
@@ -244,5 +284,49 @@ export async function verify2FA(req, res) {
     res.status(500).json({
       message: "Server error"
     });
+  }
+}
+export async function verifyOtp(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    const record = otpStore[email];
+
+    if (!record) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (record.expiry < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    const users = getCollection("users");
+
+    await users.insertOne({
+      username: record.username,
+      email: record.email,
+      password: record.password,
+      role: "user",
+      twoFactorEnabled: true
+    });
+
+    delete otpStore[email];
+
+    await sendEmail(
+      email,
+      "PassOp Registration Successful",
+      `<h2>Congratulation 🎇🎇 You Have Been successfully registered on PassOp</h2>`
+    )
+
+    res.json({
+      message: "User registered successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
   }
 }

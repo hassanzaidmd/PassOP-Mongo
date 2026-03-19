@@ -41,8 +41,10 @@ function Register() {
     const data = await res.json();
 
     if (data.message) {
-      navigate("/login", {
-        state: { message }
+      navigate("/verify-otp", {
+        state: { message,
+          email
+         }
       });
     }
   }

@@ -22,11 +22,8 @@ function ForgotPassword() {
 
     const data = await res.json();
 
-    toast(data.message);
 
-    if (data.resetURL) {
-      console.log("Reset Link:", data.resetURL);
-    }
+    toast(data.message);
 
   }
 
