@@ -4,8 +4,8 @@ import { getCollection } from "../config/db.js";
 import { ObjectId } from "mongodb";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
+import { generateOTP, hashOTP, verifyOTP, isOTPExpired } from "../utils/otp.js";
 
-const otpStore = {};
 
 export async function register(req, res) {
   try {
@@ -22,17 +22,29 @@ export async function register(req, res) {
       });
     }
 
-    const otp = Math.floor(100000 + 900000 * Math.random()).toString();
-
+    const otp = generateOTP();
+    const hashedOtp = await hashOTP(otp);
     const hashedPassword = await bcrypt.hash(password, 10);
+    const expiry = Date.now() + 5 * 60 * 1000;
 
-      otpStore[email] = {
-      username,
-      email,
-      password: hashedPassword,
-      otp,
-      expiry: Date.now() + 5 * 60 * 1000
-    };
+    const pendingUsers = getCollection("pendingUsers")
+
+    // ✅ MAIN LINE (yahi lagana hai)
+    await pendingUsers.updateOne(
+      { email },
+      {
+        $set: {
+          username,
+          email,
+          password: hashedPassword,
+          otp: hashedOtp,
+          expiry
+        }
+      },
+      { upsert: true }
+    );
+
+    console.log(expiry, " aur ", Date.now())
 
     await sendEmail(
       email,
@@ -66,7 +78,7 @@ export async function login(req, res) {
       });
     }
 
-    const match = await bcrypt.compare(password, user.password)
+    const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
       return res.status(400).json({
@@ -77,24 +89,24 @@ export async function login(req, res) {
     // 🔐 2FA CHECK
     if (user.twoFactorEnabled) {
 
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = generateOTP();
+      const hashedOtp = await hashOTP(otp);
 
       await users.updateOne(
         { _id: user._id },
         {
           $set: {
-            twoFactorCode: otp,
+            twoFactorCode: hashedOtp,
             twoFactorExpire: Date.now() + 5 * 60 * 1000
           }
         }
       );
 
-      
-    await sendEmail(
-      email,
-      "Your OTP - PassOP",
-      `<h2>Your Login Otp is ${otp}</h2>`
-    )
+      await sendEmail(
+        email,
+        "Your OTP - PassOP",
+        `<h2>Your Login Otp is ${otp}</h2>`
+      );
 
       return res.json({
         message: "OTP sent",
@@ -126,127 +138,147 @@ export async function login(req, res) {
   }
 }
 
-
 export async function forgotPassword(req, res) {
+  try {
 
-  const { email } = req.body;
+    const { email } = req.body;
 
-  const user = await getCollection("users").findOne({ email });
+    const users = getCollection("users");
 
-  if (!user) {
-    return res.json({ message: "User not found" });
-  }
+    const user = await users.findOne({ email });
 
-  // generate random token
-  const resetToken = crypto.randomBytes(32).toString("hex");
-
-  // hash token
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
-  await getCollection("users").updateOne(
-    { email },
-    {
-      $set: {
-        resetPasswordToken: hashedToken,
-        resetPasswordExpire: Date.now() + 15 * 60 * 1000
-      }
+    // 🔐 Always same response
+    if (!user) {
+      return res.json({
+        message: "If account exists, reset link sent"
+      });
     }
-  );
-  console.log(hashedToken)
-  console.log(resetToken)
 
-  const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
+    // generate token
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
-      await sendEmail(
+    // hash token
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    await users.updateOne(
+      { email },
+      {
+        $set: {
+          resetPasswordToken: hashedToken,
+          resetPasswordExpire: Date.now() + 15 * 60 * 1000
+        }
+      }
+    );
+
+    const resetURL = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    await sendEmail(
       email,
-      "Your Reset Password link - PassOP",
-      `<h2>Your password reset link is ${resetURL}</h2>`
-    )
+      "Reset Your Password - PassOP",
+      `<h2>Click below to reset your password:</h2>
+       <a href="${resetURL}">${resetURL}</a>`
+    );
 
-  res.json({
-    message: "Reset link generated",
-  });
+    res.json({
+      message: "If account exists, reset link sent"
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 }
 
 export async function resetPassword(req, res) {
-
-  const resetToken = req.params.token;
-
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
-  console.log(hashedToken)
-  console.log(resetToken)
-  const user = await getCollection("users").findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpire: { $gt: Date.now() }
-  });
-
-  if (!user) {
-    return res.json({ message: "Token invalid or expired" });
-  }
-
-  const email = user.email;
-  console.log(email)
-  const { password } = req.body;
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  await getCollection("users").updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        password: hashedPassword
-      },
-      $unset: {
-        resetPasswordToken: "",
-        resetPasswordExpire: ""
-      }
-    }
-  );
-
-  
-    await sendEmail(
-      email,
-      "PassOp Registration Successful",
-      `<h2>Congratulation 🎇🎇 You have successfully reset your password on PassOp</h2>`
-    )
-
-  res.json({
-    message: "Password reset successful"
-  });
-}
-
-export async function verify2FA(req, res) {
-
   try {
+    const resetToken = req.params.token;
 
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    const user = await getCollection("users").findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Token invalid or expired"
+      });
+    }
+
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters"
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await getCollection("users").updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          password: hashedPassword
+        },
+        $unset: {
+          resetPasswordToken: "",
+          resetPasswordExpire: ""
+        }
+      }
+    );
+
+    await sendEmail(
+      user.email,
+      "Password Changed - PassOP",
+      `<h2>Your password has been successfully changed ✅</h2>`
+    );
+
+    res.json({
+      message: "Password reset successful"
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
+}
+export async function verify2FA(req, res) {
+  try {
     const { userId, code } = req.body;
 
     const users = getCollection("users");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
-    const email = user.email;
 
+    // ✅ check first
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    if (
-      user.twoFactorCode !== code ||
-      user.twoFactorExpire < Date.now()
-    ) {
+    const email = user.email;
+
+    // ✅ use utils properly
+    const isMatch = verifyOTP(code, user.twoFactorCode);
+
+    if (!isMatch || isOTPExpired(user.twoFactorExpire)) {
       return res.status(400).json({
         message: "Invalid or expired OTP"
       });
     }
 
-    // clear OTP
+    // ✅ clear OTP securely
     await users.updateOne(
       { _id: user._id },
       {
@@ -257,6 +289,7 @@ export async function verify2FA(req, res) {
       }
     );
 
+    // ✅ generate token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -266,17 +299,18 @@ export async function verify2FA(req, res) {
       { expiresIn: "1d" }
     );
 
-    
+    // ✅ better email
     await sendEmail(
       email,
-      "PassOp Registration Successful",
-      `<h2>You have logged in on PassOp at ${Date.now()}</h2>`
-    )
+      "Login Alert - PassOP",
+      `<h2>You have successfully logged in to PassOP</h2>
+       <p>Time: ${new Date().toLocaleString()}</p>`
+    );
 
     res.json({
       message: "Login successful",
       token,
-        role: user.role
+      role: user.role
     });
 
   } catch (error) {
@@ -289,19 +323,25 @@ export async function verify2FA(req, res) {
 export async function verifyOtp(req, res) {
   try {
     const { email, otp } = req.body;
+    const pendingUsers = getCollection("pendingUsers");
 
-    const record = otpStore[email];
+    const record = await pendingUsers.findOne({ email });
 
     if (!record) {
-      return res.status(400).json({ message: "OTP expired" });
+      return res.status(400).json({ message: "OTP no" });
     }
 
-    if (record.otp !== otp) {
+    // expiry check
+    if (isOTPExpired(record.expiry)) {
+      console.log(record.expiry, " aur ", Date.now())
+      return res.status(400).json({ message: "OTP is expired" });
+    }
+
+    // verify OTP
+    const isMatch = await verifyOTP(otp, record.otp);
+
+    if (!isMatch) {
       return res.status(400).json({ message: "Invalid OTP" });
-    }
-
-    if (record.expiry < Date.now()) {
-      return res.status(400).json({ message: "OTP expired" });
     }
 
     const users = getCollection("users");
@@ -314,7 +354,8 @@ export async function verifyOtp(req, res) {
       twoFactorEnabled: true
     });
 
-    delete otpStore[email];
+    // delete from pending
+    await pendingUsers.deleteOne({ email });
 
     await sendEmail(
       email,

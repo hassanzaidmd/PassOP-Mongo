@@ -23,8 +23,8 @@ function VerifyOtp() {
       return;
     }
 
-    const res = await fetch("http://localhost:4000/api/auth/verify-2fa", {
-      method: POST,
+    const res = await fetch("http://localhost:4000/api/auth/verify-otp", {
+      method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
@@ -49,7 +49,7 @@ function VerifyOtp() {
   }
   return (
     <div className="flex items-center justify-center min-h-screen bg-green-50">
-
+      <ToastContainer />
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
 
         <h2 className="text-2xl font-bold text-center mb-4">
@@ -82,4 +82,4 @@ function VerifyOtp() {
 
 
 
-  export default VerifyOtp
+export default VerifyOtp

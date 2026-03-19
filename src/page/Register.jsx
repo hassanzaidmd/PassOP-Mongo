@@ -42,7 +42,7 @@ function Register() {
 
     if (data.message) {
       navigate("/verify-otp", {
-        state: { message,
+        state: { message: data.message,
           email
          }
       });
