@@ -5,12 +5,24 @@ import { ObjectId } from "mongodb";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
 import { generateOTP, hashOTP, verifyOTP, isOTPExpired } from "../utils/otp.js";
+import {
+  validateRegisterPayload,
+  validateLoginPayload,
+  validateForgotPasswordPayload,
+  validateResetPasswordPayload,
+  validateVerifyOtpPayload,
+  validateVerify2FAPayload
+} from "../utils/validation.js";
 
 
 export async function register(req, res) {
   try {
 
     const { username, email, password } = req.body;
+    const validationError = validateRegisterPayload({ username, email, password });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     const users = getCollection("users");
 
@@ -67,6 +79,10 @@ export async function login(req, res) {
   try {
 
     const { email, password } = req.body;
+    const validationError = validateLoginPayload({ email, password });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     const users = getCollection("users");
 
@@ -142,6 +158,10 @@ export async function forgotPassword(req, res) {
   try {
 
     const { email } = req.body;
+    const validationError = validateForgotPasswordPayload({ email });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     const users = getCollection("users");
 
@@ -215,11 +235,9 @@ export async function resetPassword(req, res) {
     }
 
     const { password } = req.body;
-
-    if (!password || password.length < 6) {
-      return res.status(400).json({
-        message: "Password must be at least 6 characters"
-      });
+    const validationError = validateResetPasswordPayload({ password });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -257,6 +275,10 @@ export async function resetPassword(req, res) {
 export async function verify2FA(req, res) {
   try {
     const { userId, code } = req.body;
+    const validationError = validateVerify2FAPayload({ userId, code });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     const users = getCollection("users");
 
@@ -323,6 +345,10 @@ export async function verify2FA(req, res) {
 export async function verifyOtp(req, res) {
   try {
     const { email, otp } = req.body;
+    const validationError = validateVerifyOtpPayload({ email, otp });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
     const pendingUsers = getCollection("pendingUsers");
 
     const record = await pendingUsers.findOne({ email });

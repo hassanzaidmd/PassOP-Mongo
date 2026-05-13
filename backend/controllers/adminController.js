@@ -1,10 +1,15 @@
 import { getCollection } from "../config/db.js";
 import { ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
+import { validateAdminCreateUserPayload } from "../utils/validation.js";
 
 export async function createUser(req, res) {
 
-    const { email, password, username } = req.body;
+    const { email, password, username, role } = req.body;
+    const validationError = validateAdminCreateUserPayload({ username, email, password, role });
+    if (validationError) {
+        return res.status(400).json({ message: validationError });
+    }
 
     const usersCollection = getCollection("users");
 
@@ -24,7 +29,7 @@ export async function createUser(req, res) {
         username,
         email,
         password: hashedPassword,
-        role: "user",
+        role,
         twoFactorEnabled: true,
         twoFactorCode: null,
         twoFactorExpire: null
@@ -50,6 +55,9 @@ export async function getAllUsers(req, res) {
 export async function deleteUser(req, res) {
 
     const userId = req.params.id;
+    if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user id" });
+    }
 
     // 1️⃣ Admin cannot delete themselves
     if (req.userId.toString() === userId) {
@@ -96,6 +104,9 @@ export async function deleteUser(req, res) {
 export async function promoteUser(req, res) {
 
     const userId = req.params.id;
+    if (!ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user id" });
+    }
 
     // 1️⃣ Admin cannot delete themselves
     if (req.userId.toString() === userId) {

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validateLogin } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 function Login() {
 
@@ -21,11 +22,11 @@ function Login() {
 
   const loginUser = async () => {
 
-    const isValid = validate({ email, password });
-    if (!isValid) return;
+    const error = validateLogin({ email, password });
+    if (error) return toast.error(error);
 
 
-    const res = await fetch("http://localhost:4000/api/auth/login", {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

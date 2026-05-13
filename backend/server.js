@@ -7,10 +7,24 @@ import { authenticate } from "./middleware/authMiddleware.js";
 import adminRoutes from "./routes/adminRoutes.js"
 
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:4173"
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  }
+};
 
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 await connectDB();
 
@@ -22,5 +36,5 @@ app.get("/middleware", authenticate, (req,res)=>{
 });
 
 app.listen(port, ()=>{
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on port ${port}`);
 });

@@ -4,7 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import useSearch from '../hooks/useSearch';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validatePasswordEntry } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 function Manager() {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ function Manager() {
   }, [search]);
 
   const getPassword = async () => {
-    let req = await fetch("http://localhost:4000", {
+    let req = await fetch(`${API_URL}`, {
       headers: {
         Authorization: token
       }
@@ -86,12 +87,12 @@ function Manager() {
 
   const savePassword = async () => {
 
-    const isValid = validate({ site: form.site, user: form.username, password: form.password });
-    if (!isValid) return;
+    const error = validatePasswordEntry({ site: form.site, username: form.username, password: form.password });
+    if (error) return toast.error(error);
 
       if (form.id) {
         // UPDATE EXISTING PASSWORD
-        await fetch(`http://localhost:4000/${form.id}`, {
+        await fetch(`${API_URL}/${form.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -101,7 +102,7 @@ function Manager() {
         });
 
         // Re-fetch all passwords from DB instead of relying on local state
-        const res = await fetch("http://localhost:4000", {
+        const res = await fetch(`${API_URL}`, {
           headers: {
             Authorization: token
           }
@@ -113,7 +114,7 @@ function Manager() {
       } else {
         // ADD NEW PASSWORD
         const newEntry = { ...form, id: uuidv4() };
-        await fetch("http://localhost:4000", {
+        await fetch(`${API_URL}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -134,7 +135,7 @@ function Manager() {
   const deletePassword = async (e) => {
     console.log("deleing password with id ", e)
     setpasswordArray(passwordArray.filter(item => item.id !== e))
-    await fetch(`http://localhost:4000/${e}`, {
+    await fetch(`${API_URL}/${e}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

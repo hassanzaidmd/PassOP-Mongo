@@ -5,7 +5,7 @@ import { Trash2, ShieldPlus } from "lucide-react";
 import { ToastContainer, toast } from 'react-toastify';
 import useSearch from '../hooks/useSearch';
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validateAdminCreateUser } from "../utils/validator";
 
 
 
@@ -64,8 +64,13 @@ function AdminDashboard() {
     };
 
     const handleCreate = async () => {
-        const isValid = validate({ username: form.username, email: form.email, password: form.password });
-        if (!isValid) return;
+        const error = validateAdminCreateUser({
+            username: form.username,
+            email: form.email,
+            password: form.password,
+            role: form.role
+        });
+        if (error) return toast.error(error);
 
         await createUser(form, token);
         setForm({ username: "", email: "", password: "", role: "user" });

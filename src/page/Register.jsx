@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validateRegister } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 
 function Register() {
@@ -23,10 +24,10 @@ function Register() {
 
   const registerUser = async () => {
     
-    const isValid = validate({ email, username, password });
-    if (!isValid) return;
+    const error = validateRegister({ email, username, password });
+    if (error) return toast.error(error);
 
-    const res = await fetch("http://localhost:4000/api/auth/register", {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

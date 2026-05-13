@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
+import { validateVerifyOtp } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 function VerifyOtp() {
 
@@ -18,12 +20,13 @@ function VerifyOtp() {
   }, []);
 
   const verifyOtp = async () => {
-    if (!otp) {
-      toast.error("Please enter OTP")
+    const error = validateVerifyOtp({ email, otp });
+    if (error) {
+      toast.error(error);
       return;
     }
 
-    const res = await fetch("http://localhost:4000/api/auth/verify-otp", {
+    const res = await fetch(`${API_URL}/api/auth/verify-otp`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

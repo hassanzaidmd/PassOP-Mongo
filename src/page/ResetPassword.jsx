@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom";
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validateResetPassword } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 function ResetPassword(){
 
@@ -11,10 +12,10 @@ function ResetPassword(){
 
   const resetPassword = async () => {
     
-    const isValid = validate({ password });
-    if (!isValid) return;
+    const error = validateResetPassword({ password });
+    if (error) return toast.error(error);
 
-    const res = await fetch(`http://localhost:4000/api/auth/reset-password/${token}`,{
+    const res = await fetch(`${API_URL}/api/auth/reset-password/${token}`,{
       method:"POST",
       headers:{
         "Content-Type":"application/json"

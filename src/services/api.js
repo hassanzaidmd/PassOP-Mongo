@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:4000";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export const getUsers = async (token) => {
   const res = await fetch(`${API_URL}/admin/users`, {
@@ -35,7 +35,7 @@ export const promoteUser = async (id, token) => {
 };
 
 export const createUser = async (user, token) => {
-  let apple = await fetch("http://localhost:4000/admin/create-user", {
+  let apple = await fetch(`${API_URL}/admin/create-user`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

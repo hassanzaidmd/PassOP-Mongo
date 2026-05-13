@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { validate } from "../../backend/utils/validator";
+import { validateForgotPassword } from "../utils/validator";
+import { API_URL } from "../services/api";
 
 function ForgotPassword() {
 
@@ -9,10 +10,10 @@ function ForgotPassword() {
 
   const handleSubmit = async () => {
     
-    const isValid = validate({email});
-    if (!isValid) return;
+    const error = validateForgotPassword({ email });
+    if (error) return toast.error(error);
 
-    const res = await fetch("http://localhost:4000/api/auth/forgot-password", {
+    const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
