@@ -292,7 +292,13 @@ export async function verify2FA(req, res) {
     const email = user.email;
 
     // ✅ use utils properly
-    const isMatch = verifyOTP(code, user.twoFactorCode);
+    if (!user.twoFactorCode || !user.twoFactorExpire) {
+      return res.status(400).json({
+        message: "OTP not generated. Please login again."
+      });
+    }
+
+    const isMatch = await verifyOTP(code, user.twoFactorCode);
 
     if (!isMatch || isOTPExpired(user.twoFactorExpire)) {
       return res.status(400).json({

@@ -12,6 +12,10 @@ export async function hashOTP(otp) {
 
 // 🔹 Verify OTP
 export async function verifyOTP(enteredOtp, hashedOtp) {
+  if (!enteredOtp || !hashedOtp) {
+    return false;
+  }
+
   return await bcrypt.compare(enteredOtp, hashedOtp);
 }
 

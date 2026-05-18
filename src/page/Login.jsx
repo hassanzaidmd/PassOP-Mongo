@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 import { validateLogin } from "../utils/validator";
 import { API_URL } from "../services/api";
 
 function Login() {
-
   const location = useLocation();
 
   useEffect(() => {
@@ -17,83 +16,89 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const loginUser = async () => {
-
     const error = validateLogin({ email, password });
     if (error) return toast.error(error);
 
-
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email,
-        password
-      })
-    });
-
-    const data = await res.json();
-    const message = data.message;
-    console.log(message)
-
-    // 🔐 2FA case
-    if (data.twoFactor) {
-      navigate("/verify-2fa", {
-        state: {
-          userId: data.userId,
-          message: "OTP sent. Please verify."
-        }
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
-      return;
-    }
+      const data = await res.json();
+      const message = data.message;
+      console.log(message);
 
-    if (data.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      if (data.role === "admin") {
-        navigate("/admin", {
-          state: { message }
+      if (data.twoFactor) {
+        navigate("/verify-2fa", {
+          state: {
+            userId: data.userId,
+            message: "OTP sent. Please verify.",
+          },
         });
-        console.log(message);
-      } else {
-        navigate("/", {
-          state: { message }
-        });
+        return;
       }
-    } else {
-      toast(message);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+
+        if (data.role === "admin") {
+          navigate("/admin", {
+            state: { message },
+          });
+          console.log(message);
+        } else {
+          navigate("/", {
+            state: { message },
+          });
+        }
+      } else {
+        toast(message);
+      }
+    } catch (error) {
+      toast.error("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className=" flex pt-15 items-center justify-center ">
-
       <ToastContainer />
 
-      <div className="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"><div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div></div>
+      <div className="absolute inset-0 -z-10 h-full w-full bg-green-50 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-green-400 opacity-20 blur-[100px]"></div>
+      </div>
 
       <div className="w-full max-w-md bg-white/90 backdrop-blur-lg shadow-2xl rounded-2xl p-10">
+        <h1 className="text-4xl text font-bold text-center">
+          <span className="text-green-500"> &lt;</span>
 
-        <h1 className='text-4xl text font-bold text-center'>
-          <span className='text-green-500'> &lt;</span>
-
-          <span>Pass</span><span className='text-green-500'>OP/&gt;</span>
-
+          <span>Pass</span>
+          <span className="text-green-500">OP/&gt;</span>
         </h1>
-        <p className='text-green-900 text-lg text-center'>Your own Password Manager</p>
+        <p className="text-green-900 text-lg text-center">
+          Your own Password Manager
+        </p>
 
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
           Welcome Back
         </h2>
 
         <div className="flex flex-col gap-5">
-
           <input
             type="email"
             placeholder="Email"
@@ -110,11 +115,11 @@ function Login() {
 
           <button
             onClick={loginUser}
-            className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+            disabled={isLoading}
+            className="mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
           >
-            Login
+            {isLoading ? "Logging in..." : "Login"}
           </button>
-
         </div>
 
         <p className="text-center text-gray-600 mt-6">
@@ -134,9 +139,7 @@ function Login() {
             Forgot Password?
           </Link>
         </p>
-
       </div>
-
     </div>
   );
 }
