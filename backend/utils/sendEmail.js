@@ -9,17 +9,48 @@ if (typeof dns.setDefaultResultOrder === "function") {
 
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
     family: 4,
+    requireTLS: true,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
     auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASS
     }
 });
 
+function logMailError(stage, error) {
+    console.log(`[mail:${stage}] failed`);
+    console.log(`[mail:${stage}] message:`, error?.message);
+    console.log(`[mail:${stage}] code:`, error?.code);
+    console.log(`[mail:${stage}] errno:`, error?.errno);
+    console.log(`[mail:${stage}] syscall:`, error?.syscall);
+    console.log(`[mail:${stage}] command:`, error?.command);
+    console.log(`[mail:${stage}] address:`, error?.address);
+    console.log(`[mail:${stage}] port:`, error?.port);
+    console.log(`[mail:${stage}] response:`, error?.response);
+    console.log(`[mail:${stage}] stack:`, error?.stack);
+}
+
 export const sendEmail = async (to, subject, html) => {
     try {
+        console.log("[mail] send requested");
+        console.log("[mail] to:", to);
+        console.log("[mail] subject:", subject);
+        console.log("[mail] smtp host:", "smtp.gmail.com");
+        console.log("[mail] smtp port:", 587);
+        console.log("[mail] smtp secure:", false);
+        console.log("[mail] smtp family:", 4);
+        console.log("[mail] smtp requireTLS:", true);
+        console.log("[mail] auth user set:", Boolean(process.env.EMAIL));
+
+        console.log("[mail] verifying smtp connection");
+        await transporter.verify();
+        console.log("[mail] smtp verification passed");
+
+        console.log("[mail] sending message");
         const info = await transporter.sendMail({
             from: `"PassOp <${process.env.EMAIL}>"`,
             to,
@@ -27,11 +58,13 @@ export const sendEmail = async (to, subject, html) => {
             html
         });
 
-        console.log("Email Sent:", info.response);
+        console.log("[mail] sent");
+        console.log("[mail] response:", info.response);
+        console.log("[mail] messageId:", info.messageId);
         return info;
     }
     catch (error) {
-        console.log("Email Error:", error);
+        logMailError("send", error);
         throw error;
     }
 };
