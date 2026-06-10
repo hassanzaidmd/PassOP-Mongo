@@ -20,7 +20,7 @@ async function createTransporter() {
         port: 587,
         secure: false,
         requireTLS: true,
-        connectionTimeout: 15000,
+        connectionTimeout: 150000,
         greetingTimeout: 15000,
         auth: {
             user: process.env.EMAIL,
