@@ -8,17 +8,32 @@ if (typeof dns.setDefaultResultOrder === "function") {
 }
 
 const SMTP_HOST = "smtp.gmail.com";
+const SMTP_CANDIDATES = [
+    {
+        port: 465,
+        secure: true,
+        label: "465-secure"
+    },
+    {
+        port: 587,
+        secure: false,
+        label: "587-starttls"
+    }
+];
 let transporterPromise = null;
 
-async function createTransporter() {
+async function createTransporter(candidate) {
     const resolved = await dns.promises.lookup(SMTP_HOST, { family: 4 });
     console.log("[mail] resolved smtp host:", SMTP_HOST);
     console.log("[mail] resolved smtp ipv4:", resolved.address);
+    console.log("[mail] using smtp candidate:", candidate.label);
+    console.log("[mail] smtp port:", candidate.port);
+    console.log("[mail] smtp secure:", candidate.secure);
 
     return nodemailer.createTransport({
         host: resolved.address,
-        port: 587,
-        secure: false,
+        port: candidate.port,
+        secure: candidate.secure,
         requireTLS: true,
         connectionTimeout: 15000,
         greetingTimeout: 15000,
@@ -32,10 +47,10 @@ async function createTransporter() {
     });
 }
 
-async function getTransporter() {
+async function getTransporter(candidate) {
     if (!transporterPromise) {
         console.log("[mail] creating smtp transport");
-        transporterPromise = createTransporter();
+        transporterPromise = createTransporter(candidate);
     }
 
     return transporterPromise;
@@ -55,36 +70,41 @@ function logMailError(stage, error) {
 }
 
 export const sendEmail = async (to, subject, html) => {
-    try {
-        console.log("[mail] send requested");
-        console.log("[mail] to:", to);
-        console.log("[mail] subject:", subject);
-        console.log("[mail] smtp host:", SMTP_HOST);
-        console.log("[mail] smtp port:", 587);
-        console.log("[mail] smtp secure:", false);
-        console.log("[mail] smtp requireTLS:", true);
-        console.log("[mail] auth user set:", Boolean(process.env.EMAIL));
+    console.log("[mail] send requested");
+    console.log("[mail] to:", to);
+    console.log("[mail] subject:", subject);
+    console.log("[mail] smtp host:", SMTP_HOST);
+    console.log("[mail] auth user set:", Boolean(process.env.EMAIL));
 
-        console.log("[mail] verifying smtp connection");
-        const transporter = await getTransporter();
-        await transporter.verify();
-        console.log("[mail] smtp verification passed");
+    let lastError;
 
-        console.log("[mail] sending message");
-        const info = await transporter.sendMail({
-            from: `"PassOp <${process.env.EMAIL}>"`,
-            to,
-            subject,
-            html
-        });
+    for (const candidate of SMTP_CANDIDATES) {
+        try {
+            transporterPromise = null;
 
-        console.log("[mail] sent");
-        console.log("[mail] response:", info.response);
-        console.log("[mail] messageId:", info.messageId);
-        return info;
+            console.log("[mail] verifying smtp connection");
+            const transporter = await getTransporter(candidate);
+            await transporter.verify();
+            console.log("[mail] smtp verification passed");
+
+            console.log("[mail] sending message");
+            const info = await transporter.sendMail({
+                from: `"PassOp <${process.env.EMAIL}>"`,
+                to,
+                subject,
+                html
+            });
+
+            console.log("[mail] sent");
+            console.log("[mail] response:", info.response);
+            console.log("[mail] messageId:", info.messageId);
+            return info;
+        }
+        catch (error) {
+            lastError = error;
+            logMailError(candidate.label, error);
+        }
     }
-    catch (error) {
-        logMailError("send", error);
-        throw error;
-    }
+
+    throw lastError;
 };
