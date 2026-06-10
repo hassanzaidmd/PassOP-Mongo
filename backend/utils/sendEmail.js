@@ -35,7 +35,7 @@ async function createTransporter(candidate) {
         port: candidate.port,
         secure: candidate.secure,
         requireTLS: true,
-        connectionTimeout: 15000,
+        connectionTimeout: 150000,
         greetingTimeout: 15000,
         auth: {
             user: process.env.EMAIL,
