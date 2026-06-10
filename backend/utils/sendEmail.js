@@ -7,23 +7,39 @@ if (typeof dns.setDefaultResultOrder === "function") {
     dns.setDefaultResultOrder("ipv4first");
 }
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    family: 4,
-    requireTLS: true,
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    lookup: (hostname, options, callback) => {
-        console.log("[mail] forcing ipv4 lookup for:", hostname);
-        return dns.lookup(hostname, { family: 4, all: false }, callback);
-    },
-    auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS
+const SMTP_HOST = "smtp.gmail.com";
+let transporterPromise = null;
+
+async function createTransporter() {
+    const resolved = await dns.promises.lookup(SMTP_HOST, { family: 4 });
+    console.log("[mail] resolved smtp host:", SMTP_HOST);
+    console.log("[mail] resolved smtp ipv4:", resolved.address);
+
+    return nodemailer.createTransport({
+        host: resolved.address,
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        auth: {
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASS
+        },
+        tls: {
+            servername: SMTP_HOST
+        }
+    });
+}
+
+async function getTransporter() {
+    if (!transporterPromise) {
+        console.log("[mail] creating smtp transport");
+        transporterPromise = createTransporter();
     }
-});
+
+    return transporterPromise;
+}
 
 function logMailError(stage, error) {
     console.log(`[mail:${stage}] failed`);
@@ -43,14 +59,14 @@ export const sendEmail = async (to, subject, html) => {
         console.log("[mail] send requested");
         console.log("[mail] to:", to);
         console.log("[mail] subject:", subject);
-        console.log("[mail] smtp host:", "smtp.gmail.com");
+        console.log("[mail] smtp host:", SMTP_HOST);
         console.log("[mail] smtp port:", 587);
         console.log("[mail] smtp secure:", false);
-        console.log("[mail] smtp family:", 4);
         console.log("[mail] smtp requireTLS:", true);
         console.log("[mail] auth user set:", Boolean(process.env.EMAIL));
 
         console.log("[mail] verifying smtp connection");
+        const transporter = await getTransporter();
         await transporter.verify();
         console.log("[mail] smtp verification passed");
 
