@@ -15,6 +15,10 @@ const transporter = nodemailer.createTransport({
     requireTLS: true,
     connectionTimeout: 15000,
     greetingTimeout: 15000,
+    lookup: (hostname, options, callback) => {
+        console.log("[mail] forcing ipv4 lookup for:", hostname);
+        return dns.lookup(hostname, { family: 4, all: false }, callback);
+    },
     auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASS
