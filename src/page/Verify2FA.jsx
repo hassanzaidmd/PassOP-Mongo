@@ -73,11 +73,11 @@ function Verify2FA() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-50">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4 py-10">
       <ToastContainer />
 
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-96">
-        <h2 className="text-2xl font-bold text-center mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-6">
           Verify OTP
         </h2>
 

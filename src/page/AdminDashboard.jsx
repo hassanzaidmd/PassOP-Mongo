@@ -104,19 +104,19 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div className="p-10">
+    <div className="p-4 sm:p-6 lg:p-10">
       <ToastContainer />
 
-      <h1 className="text-3xl font-bold text-gray-800 mb-10">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 sm:mb-10">
         Admin Dashboard
       </h1>
 
-      <div className="bg-white shadow-lg rounded-xl p-6 mb-10">
+      <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 mb-10">
         <h2 className="text-xl font-semibold mb-6 text-gray-700">
           Create New User
         </h2>
 
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           <input
             type="text"
             placeholder="Username"
@@ -168,10 +168,82 @@ function AdminDashboard() {
         className="w-full mb-6 md:w-1/2 p-2 px-4 border border-green-400 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
       />
 
-      <div className="bg-white shadow-lg rounded-xl p-6">
+      <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6">
         <h2 className="text-xl font-semibold mb-6 text-gray-700">Users</h2>
 
-        <table className="w-full text-left border-collapse">
+        <div className="md:hidden space-y-4">
+          {isLoadingUsers && (
+            <div className="py-6 text-center">Loading users...</div>
+          )}
+
+          {!isLoadingUsers &&
+            currentItems.map((user) => (
+              <div
+                key={user._id}
+                className="rounded-xl border border-gray-200 bg-white shadow-sm p-4 space-y-4"
+              >
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Email
+                  </p>
+                  <p className="break-all font-medium text-gray-900">
+                    {user.email}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Role
+                  </p>
+                  <span
+                    className={`inline-flex px-3 py-1 rounded-full text-sm font-medium
+                      ${
+                        user.role === "admin"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 border-t pt-3 border-gray-100">
+                  <button
+                    onClick={() => handlePromote(user._id)}
+                    disabled={
+                      busyAction?.type === "promote" &&
+                      busyAction?.id === user._id
+                    }
+                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition shadow-sm"
+                  >
+                    <ShieldPlus size={16} />
+                    {busyAction?.type === "promote" &&
+                    busyAction?.id === user._id
+                      ? "Promoting..."
+                      : "Promote"}
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(user._id)}
+                    disabled={
+                      busyAction?.type === "delete" &&
+                      busyAction?.id === user._id
+                    }
+                    className="flex items-center gap-1 bg-red-500 hover:bg-red-600 disabled:bg-red-400 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition shadow-sm"
+                  >
+                    <Trash2 size={16} />
+                    {busyAction?.type === "delete" &&
+                    busyAction?.id === user._id
+                      ? "Deleting..."
+                      : "Delete"}
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-[640px] w-full text-left border-collapse">
           <thead>
             <tr className="border-b text-gray-600">
               <th className="pb-3">Email</th>
@@ -245,8 +317,9 @@ function AdminDashboard() {
               ))}
           </tbody>
         </table>
+        </div>
 
-        <div className="flex items-center justify-center gap-4 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
           <button
             onClick={() => setCurrentPage((prev) => prev - 1)}
             disabled={currentPage === 1}

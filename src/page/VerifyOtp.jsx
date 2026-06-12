@@ -58,10 +58,10 @@ function VerifyOtp() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-50">
+    <div className="flex items-center justify-center min-h-screen bg-green-50 px-4 py-10">
       <ToastContainer />
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-4">
+      <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-4">
           Verify OTP
         </h2>
 

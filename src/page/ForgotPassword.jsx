@@ -32,21 +32,21 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="flex justify-center items-center py-16">
+    <div className="flex justify-center items-center px-4 py-10 sm:py-16">
       <ToastContainer />
 
-      <div className="bg-white shadow-lg p-18 rounded-xl w-96">
-        <h1 className="text-4xl text font-bold text-center">
+      <div className="bg-white shadow-lg p-6 sm:p-8 rounded-xl w-full max-w-md">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center">
           <span className="text-green-500"> &lt;</span>
 
           <span>Pass</span>
           <span className="text-green-500">OP/&gt;</span>
         </h1>
-        <p className="text-green-900 text-lg text-center">
+        <p className="text-green-900 text-base sm:text-lg text-center">
           Your own Password Manager
         </p>
 
-        <h2 className="text-2xl font-bold my-6 text-center">
+        <h2 className="text-xl sm:text-2xl font-bold my-6 text-center">
           Forgot Password
         </h2>
 

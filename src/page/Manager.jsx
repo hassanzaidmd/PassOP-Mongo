@@ -184,16 +184,16 @@ function Manager() {
       <ToastContainer />
 
       <div className="myContainer pb-0">
-        <h1 className="text-4xl text font-bold text-center">
+        <h1 className="text-3xl sm:text-4xl font-bold text-center">
           <span className="text-green-500"> &lt;</span>
           <span>Pass</span>
           <span className="text-green-500">OP/&gt;</span>
         </h1>
-        <p className="text-green-900 text-lg text-center">
+        <p className="text-green-900 text-base sm:text-lg text-center">
           Your own Password Manager
         </p>
 
-        <div className="flex flex-col p-4 text-black gap-8 items-center">
+        <div className="flex flex-col p-4 text-black gap-6 sm:gap-8 items-center">
           <input
             value={form.site}
             onChange={handleChange}
@@ -203,7 +203,7 @@ function Manager() {
             name="site"
             id="site"
           />
-          <div className="flex flex-col md:flex-row w-full justify-between gap-8">
+          <div className="flex flex-col md:flex-row w-full justify-between gap-4 sm:gap-8">
             <input
               value={form.username}
               onChange={handleChange}
@@ -267,8 +267,126 @@ function Manager() {
             <div>No passwords to show</div>
           )}
           {!isLoadingPasswords && passwordArray.length !== 0 && (
-            <div>
-              <table className="table-auto w-full rounded-md overflow-hidden mb-10">
+            <>
+              <div className="md:hidden space-y-4 mb-10">
+                {Array.isArray(currentItems) &&
+                  currentItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-green-200 bg-white shadow-sm p-4 space-y-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            Site
+                          </p>
+                          <a
+                            href={item.site}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold text-green-900 break-all"
+                          >
+                            {item.site}
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0"
+                          onClick={() => copyText(item.site)}
+                        >
+                          <lord-icon
+                            style={{ width: "28px", height: "28px" }}
+                            src="https://cdn.lordicon.com/iykgtsbt.json"
+                            trigger="hover"
+                          ></lord-icon>
+                        </button>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            Username
+                          </p>
+                          <p className="font-medium break-all">{item.username}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0"
+                          onClick={() => copyText(item.username)}
+                        >
+                          <lord-icon
+                            style={{ width: "28px", height: "28px" }}
+                            src="https://cdn.lordicon.com/iykgtsbt.json"
+                            trigger="hover"
+                          ></lord-icon>
+                        </button>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            Password
+                          </p>
+                          <p className="font-medium break-all">
+                            {"*".repeat(item.password.length)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0"
+                          onClick={() => copyText(item.password)}
+                        >
+                          <lord-icon
+                            style={{ width: "28px", height: "28px" }}
+                            src="https://cdn.lordicon.com/iykgtsbt.json"
+                            trigger="hover"
+                          ></lord-icon>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-4 border-t pt-3 border-green-100">
+                        <button
+                          type="button"
+                          onClick={() => editPassword(item.id)}
+                          className="inline-flex items-center gap-2 text-sm font-medium text-blue-700"
+                        >
+                          <lord-icon
+                            src="https://cdn.lordicon.com/gwlusjdu.json"
+                            trigger="hover"
+                            style={{ width: "22px", height: "22px" }}
+                          ></lord-icon>
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deletePassword(item.id)}
+                          disabled={deletingId === item.id}
+                          className={`inline-flex items-center gap-2 text-sm font-medium ${
+                            deletingId === item.id
+                              ? "text-red-400"
+                              : "text-red-700"
+                          }`}
+                        >
+                          {deletingId === item.id ? (
+                            "Deleting..."
+                          ) : (
+                            <>
+                              <lord-icon
+                                src="https://cdn.lordicon.com/skkahier.json"
+                                trigger="hover"
+                                style={{ width: "22px", height: "22px" }}
+                              ></lord-icon>
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-[720px] table-auto w-full rounded-md overflow-hidden mb-10">
                 <thead className="bg-green-800 text-white">
                   <tr>
                     <th className="py-2">Site</th>
@@ -391,8 +509,9 @@ function Manager() {
                     })}
                 </tbody>
               </table>
+              </div>
 
-              <div className="flex items-center justify-center mb-6 gap-4 mt-6">
+              <div className="flex flex-wrap items-center justify-center mb-6 gap-4 mt-6">
                 <button
                   onClick={() => setCurrentPage((prev) => prev - 1)}
                   disabled={currentPage === 1}
@@ -413,7 +532,7 @@ function Manager() {
                   Next →
                 </button>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>

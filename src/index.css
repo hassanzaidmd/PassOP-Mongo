@@ -6,6 +6,6 @@ input{
 
 @layer components{
 .myContainer{
-    @apply container mx-auto px-40 py-16;
+    @apply container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 md:py-12;
 }
 }
