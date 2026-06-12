@@ -102,14 +102,17 @@ If `VITE_API_URL` is not set, the frontend falls back to `http://localhost:4000`
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
-EMAIL=your_gmail_address
-EMAIL_PASS=your_gmail_app_password
+GMAIL_USER=yourname@gmail.com
+GMAIL_CLIENT_ID=your_google_oauth_client_id
+GMAIL_CLIENT_SECRET=your_google_oauth_client_secret
+GMAIL_REFRESH_TOKEN=your_google_refresh_token
 PORT=4000
 ```
 
 Notes:
 
-- `EMAIL` and `EMAIL_PASS` are used by Nodemailer for registration OTPs, 2FA codes, and password reset emails.
+- `GMAIL_USER` is the Gmail account that sends OTPs, 2FA codes, and password reset emails.
+- `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN` are used by the Gmail API OAuth flow.
 - `CLIENT_URL` is used to generate reset-password links and to allow the frontend origin in CORS.
 
 ## Installation
@@ -188,4 +191,3 @@ Before deploying:
 ## License
 
 No license has been added yet. If you plan to publish this on GitHub, consider adding one based on how you want others to use the project.
-
